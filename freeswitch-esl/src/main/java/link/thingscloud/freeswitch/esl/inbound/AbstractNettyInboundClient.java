@@ -37,8 +37,7 @@ import link.thingscloud.freeswitch.esl.transport.message.EslFrameDecoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.*;
 
 /**
  * @author : <a href="mailto:ant.zhou@aliyun.com">zhouhailin</a>
@@ -59,8 +58,15 @@ abstract class AbstractNettyInboundClient implements ChannelEventListener, Inbou
 
         bootstrap = new Bootstrap();
 
-        publicExecutor = new ScheduledThreadPoolExecutor(option.publicExecutorThread(),
-                new DefaultThreadFactory("publicExecutor", true));
+//        publicExecutor = new ScheduledThreadPoolExecutor(option.publicExecutorThread(),
+//                new DefaultThreadFactory("publicExecutor", true));
+        // 为publicExecutor线程池定义一个有界队列，阻塞队列长度100，防止内存溢出
+        publicExecutor = new ThreadPoolExecutor(option.publicExecutorThread(), option.publicExecutorThread() * 4,
+                10, TimeUnit.MINUTES,
+                new ArrayBlockingQueue<>(100),
+                new DefaultThreadFactory("publicExecutor", true),
+                new ThreadPoolExecutor.AbortPolicy());
+
         privateExecutor = new ScheduledThreadPoolExecutor(option.privateExecutorThread(),
                 new DefaultThreadFactory("privateExecutor", true));
 
